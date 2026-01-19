@@ -6,43 +6,53 @@
 <style>
 body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     background: linear-gradient(135deg, #ff758c, #ffb199);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     font-family: 'Segoe UI', sans-serif;
-    overflow: hidden;
+    text-align: center;
+    padding: 20px;
 }
 
 h1 {
     color: white;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
-#container {
+#cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.card {
     position: relative;
-    width: 320px;
-    height: 200px;
-    border-radius: 20px;
+    width: 260px;
+    height: 180px;
+    border-radius: 18px;
     overflow: hidden;
     background: white;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
-#message {
+.hiddenContent {
     position: absolute;
     inset: 0;
+    z-index: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 15px;
-    font-size: 18px;
+    flex-direction: column;
+}
+
+.hiddenContent img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.hiddenContent p {
+    margin: 5px;
     font-weight: bold;
     color: #ff4d6d;
-    z-index: 1;
 }
 
 canvas {
@@ -51,9 +61,28 @@ canvas {
     z-index: 2;
 }
 
-#hint {
-    margin-top: 12px;
+.hint {
     color: white;
+    margin-bottom: 15px;
+}
+
+/* Confetti + hearts */
+.particle {
+    position: fixed;
+    font-size: 18px;
+    animation: fly 3s linear forwards;
+    pointer-events: none;
+}
+
+@keyframes fly {
+    from {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-300px) scale(1.5);
+        opacity: 0;
+    }
 }
 </style>
 </head>
@@ -61,69 +90,129 @@ canvas {
 <body>
 
 <h1>🪙 Scratch It Bubbu 🪙</h1>
+<div class="hint">Scratch each card to reveal your surprise 💖</div>
 
-<div id="container">
-    <div id="message">
-        Bubbu ❤️  
-        Tu maro favorite human che.  
-        Hu tane bau prem karu chu 😘
-    </div>
-    <canvas id="scratch"></canvas>
-</div>
-
-<div id="hint">Scratch with mouse or finger 👆</div>
+<div id="cards"></div>
 
 <script>
-const canvas = document.getElementById("scratch");
-const ctx = canvas.getContext("2d");
-const container = document.getElementById("container");
+const cardData = [
+{
+    img: "C:\Users\dell\OneDrive\Desktop\codes\fun",
+    text: "Tu maro favorite human che ❤️"
+},
+{
+    img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600",
+    text: "I always love you forever the most 💪"
+},
+{
+    img: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=600",
+    text: "Hu tane bau prem karu chu Bubbu 😘"
+}
+];
 
-canvas.width = container.offsetWidth;
-canvas.height = container.offsetHeight;
+const container = document.getElementById("cards");
 
-// Fill scratch layer
-ctx.fillStyle = "#b0b0b0";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-ctx.font = "20px Arial";
-ctx.fillStyle = "#555";
-ctx.fillText("Scratch Here 😄", 80, 110);
+cardData.forEach((data, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
 
-let scratching = false;
+    const hidden = document.createElement("div");
+    hidden.className = "hiddenContent";
+    hidden.innerHTML = `
+        <img src="${data.img}">
+        <p>${data.text}</p>
+    `;
 
-function getPos(e){
-    const rect = canvas.getBoundingClientRect();
-    if(e.touches){
+    const canvas = document.createElement("canvas");
+    card.appendChild(hidden);
+    card.appendChild(canvas);
+    container.appendChild(card);
+
+    setupScratch(canvas, card);
+});
+
+function setupScratch(canvas, card){
+    const ctx = canvas.getContext("2d");
+    canvas.width = card.offsetWidth;
+    canvas.height = card.offsetHeight;
+
+    ctx.fillStyle = "#b0b0b0";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "#555";
+    ctx.fillText("Scratch Me 😄", 70, canvas.height / 2);
+
+    let scratching = false;
+    let cleared = false;
+
+    function getPos(e){
+        const rect = canvas.getBoundingClientRect();
+        if(e.touches){
+            return {
+                x: e.touches[0].clientX - rect.left,
+                y: e.touches[0].clientY - rect.top
+            };
+        }
         return {
-            x: e.touches[0].clientX - rect.left,
-            y: e.touches[0].clientY - rect.top
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
         };
     }
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+
+    function scratch(e){
+        if(!scratching) return;
+        const pos = getPos(e);
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        checkReveal();
+    }
+
+    function checkReveal(){
+        if(cleared) return;
+
+        const pixels = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        let transparent = 0;
+        for(let i=3;i<pixels.length;i+=4){
+            if(pixels[i] === 0) transparent++;
+        }
+
+        const percent = transparent / (pixels.length / 4);
+        if(percent > 0.45){
+            cleared = true;
+            canvas.style.display = "none";
+            launchCelebration();
+        }
+    }
+
+    // Mouse
+    canvas.addEventListener("mousedown", ()=> scratching = true);
+    canvas.addEventListener("mouseup", ()=> scratching = false);
+    canvas.addEventListener("mousemove", scratch);
+
+    // Touch
+    canvas.addEventListener("touchstart", ()=> scratching = true);
+    canvas.addEventListener("touchend", ()=> scratching = false);
+    canvas.addEventListener("touchmove", scratch);
 }
 
-function scratch(e){
-    if(!scratching) return;
-    const pos = getPos(e);
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
-    ctx.fill();
+// Confetti + hearts burst
+function launchCelebration(){
+    for(let i=0;i<25;i++){
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.innerHTML = Math.random() > 0.5 ? "🎉" : "❤️";
+        particle.style.left = Math.random() * window.innerWidth + "px";
+        particle.style.bottom = "0px";
+        particle.style.fontSize = (16 + Math.random()*25) + "px";
+        document.body.appendChild(particle);
+
+        setTimeout(()=> particle.remove(), 3000);
+    }
 }
-
-// Mouse
-canvas.addEventListener("mousedown", ()=> scratching = true);
-canvas.addEventListener("mouseup", ()=> scratching = false);
-canvas.addEventListener("mousemove", scratch);
-
-// Touch
-canvas.addEventListener("touchstart", ()=> scratching = true);
-canvas.addEventListener("touchend", ()=> scratching = false);
-canvas.addEventListener("touchmove", scratch);
 </script>
 
 </body>
 </html>
-
