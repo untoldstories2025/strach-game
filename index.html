@@ -27,8 +27,8 @@ h1 {
 
 .card {
     position: relative;
-    width: min(95vw, 420px);   
-    height: 300px; 
+    width: min(95vw, 480px);   
+    height: 420px; 
     border-radius: 18px;
     overflow: hidden;
     background: white;
@@ -45,13 +45,24 @@ h1 {
     width: 100%;
     height: 100%;
     object-fit: contain;  
-    background: black;
 }
 
 .hiddenContent p {
     margin: 5px;
     font-weight: bold;
     color: #ff4d6d;
+}
+
+    .hiddenContent p {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 15px;
 }
 
 canvas {
@@ -215,6 +226,7 @@ function launchCelebration(){
 
 </body>
 </html>
+
 
 
 
