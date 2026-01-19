@@ -27,8 +27,8 @@ h1 {
 
 .card {
     position: relative;
-    width: 300px;
-    height: 240px;
+    width: min(95vw, 420px);   
+    height: 300px; 
     border-radius: 18px;
     overflow: hidden;
     background: white;
@@ -39,14 +39,13 @@ h1 {
     position: absolute;
     inset: 0;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
 }
 
 .hiddenContent img {
     width: 100%;
-    height: 300px;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain;  
+    background: black;
 }
 
 .hiddenContent p {
@@ -216,5 +215,6 @@ function launchCelebration(){
 
 </body>
 </html>
+
 
 
